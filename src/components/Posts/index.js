@@ -1,19 +1,20 @@
-import { memo, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
-import { ReactionButtons } from "../Emoji";
-import { PostAuthor } from "../PostAuthor";
-import { Spinner } from "../Spinner";
-import { TimeAgo } from "../TimeAgo";
+import { memo, useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Link } from 'react-router-dom'
+import { useGetPostsQuery } from '../../api/apiSlice'
+import { ReactionButtons } from '../Emoji'
+import { PostAuthor } from '../PostAuthor'
+import { Spinner } from '../Spinner'
+import { TimeAgo } from '../TimeAgo'
 import {
   fetchPosts,
   selectPostById,
   selectPostIds,
-  selectPosts
-} from "./slicePosts";
+  selectPosts,
+} from './slicePosts'
 
-const PostExcerpt = ({ postId }) => {
-  const post = useSelector((state) => selectPostById(state, postId));
+const PostExcerpt = ({ post }) => {
+  // const post = useSelector((state) => selectPostById(state, postId));
   return (
     <article className="post-excerpt">
       <h3>{post.title}</h3>
@@ -29,32 +30,26 @@ const PostExcerpt = ({ postId }) => {
         View Post
       </Link>
     </article>
-  );
-};
+  )
+}
 
 export default function Posts() {
-  const posts = useSelector(selectPostIds);
-  const postStatus = useSelector((state) => state.posts.status);
-  const error = useSelector((state) => state.posts.error);
+  const {
+    data: posts,
+    isLoading,
+    isSuccess,
+    isError,
+    error,
+  } = useGetPostsQuery()
 
-  const dispatch = useDispatch();
+  let content
 
-  useEffect(() => {
-    if (postStatus === "idle") dispatch(fetchPosts());
-  }, [postStatus, dispatch]);
-
-  let content;
-
-  console.log(posts);
-
-  if (postStatus === "loading") {
-    content = <Spinner text="Loading..." />;
-  } else if (postStatus === "succeeded") {
-    content = posts.map((postId) => (
-      <PostExcerpt key={postId} postId={postId} />
-    ));
-  } else if (postStatus === "failed") {
-    content = <div>{error}</div>;
+  if (isLoading) {
+    content = <Spinner text="Loading..." />
+  } else if (isSuccess) {
+    content = posts.map((post) => <PostExcerpt key={post.id} post={post} />)
+  } else if (isError) {
+    content = <div>{error}</div>
   }
 
   return (
@@ -62,5 +57,5 @@ export default function Posts() {
       <h2>Posts</h2>
       {content}
     </section>
-  );
+  )
 }
