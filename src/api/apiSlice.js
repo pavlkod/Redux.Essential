@@ -14,6 +14,9 @@ export const apiSlice = createApi({
       // The URL for the request is '/fakeApi/posts'
       query: () => '/posts',
     }),
+    getPost: builder.query({
+      query: (postId) => `/posts/${postId}`,
+    }),
   }),
 })
 
