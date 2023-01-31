@@ -1,40 +1,41 @@
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { addNewPost, addPost } from "../Posts/slicePosts";
-import { selectAllUsers } from "../User/sliceUser";
+import React, { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { useAddNewPostMutation } from '../../api/apiSlice'
+// import { addNewPost, addPost } from '../Posts/slicePosts'
+import { selectAllUsers } from '../User/sliceUser'
 
 export const AddPostForm = () => {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [userId, setUserId] = useState("");
+  const [title, setTitle] = useState('')
+  const [content, setContent] = useState('')
+  const [userId, setUserId] = useState('')
 
-  const dispatch = useDispatch();
-  const users = useSelector(selectAllUsers);
+  const dispatch = useDispatch()
+  const users = useSelector(selectAllUsers)
 
-  console.log(users);
+  console.log(users)
 
-  const onTitleChanged = (e) => setTitle(e.target.value);
-  const onContentChanged = (e) => setContent(e.target.value);
-  const onAuthorChanged = (e) => setUserId(e.target.value);
+  const [addNewPost, { isLoading }] = useAddNewPostMutation()
 
-  const canSave = [title, content, userId].every(Boolean);
+  const onTitleChanged = (e) => setTitle(e.target.value)
+  const onContentChanged = (e) => setContent(e.target.value)
+  const onAuthorChanged = (e) => setUserId(e.target.value)
+
+  const canSave = [title, content, userId].every(Boolean) && !isLoading
 
   return (
     <section>
       <h2>Add a New Post</h2>
       <form
         onSubmit={async (e) => {
-          e.preventDefault();
+          e.preventDefault()
           if (canSave) {
             try {
-              await dispatch(
-                addNewPost({ title, content, user: userId })
-              ).unwrap();
-              setTitle("");
-              setContent("");
-              setUserId("");
+              await addNewPost({ title, content, user: userId }).unwrap()
+              setTitle('')
+              setContent('')
+              setUserId('')
             } catch (e) {
-              console.error("Fail: ", e);
+              console.error('Fail: ', e)
             }
           }
         }}
@@ -68,5 +69,5 @@ export const AddPostForm = () => {
         </button>
       </form>
     </section>
-  );
-};
+  )
+}
