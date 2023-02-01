@@ -28,9 +28,22 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Post'],
     }),
+    updatePost: builder.mutation({
+      query: (post) => ({
+        url: `/posts/${post.id}`,
+        method: 'PATCH',
+        // Include the entire post object as the body of the request
+        body: post,
+      }),
+      invalidatesTags: ['Post'],
+    }),
   }),
 })
 
 // Export the auto-generated hook for the `getPosts` query endpoint
-export const { useGetPostsQuery, useGetPostQuery, useAddNewPostMutation } =
-  apiSlice
+export const {
+  useGetPostsQuery,
+  useGetPostQuery,
+  useAddNewPostMutation,
+  useUpdatePostMutation,
+} = apiSlice
