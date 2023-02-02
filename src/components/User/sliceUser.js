@@ -7,6 +7,7 @@ import {
 import { apiSlice } from '../../api/apiSlice'
 import { client } from '../../api/client'
 
+/*
 const usersAdapter = createEntityAdapter()
 const initialState = usersAdapter.getInitialState()
 
@@ -35,6 +36,7 @@ export const {
   selectById: selectUserById3,
   selectIds: selectUserIds,
 } = usersAdapter.getSelectors((state) => state.users)
+*/
 
 const emptyUsers = []
 const selectUsersResult = apiSlice.endpoints.getUsers.select()
