@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom'
 import './index.css'
 import App from './App'
 import store from './app/store'
-import { fetchUsers } from './components/User/sliceUser'
+import { extendedApiSlice, fetchUsers } from './components/User/sliceUser'
 import { Provider } from 'react-redux'
 
 import { worker } from './api/server'
@@ -15,7 +15,7 @@ async function start() {
   await worker.start({ onUnhandledRequest: 'bypass' })
 
   // store.dispatch(fetchUsers());
-  store.dispatch(apiSlice.endpoints.getUsers.initiate())
+  store.dispatch(extendedApiSlice.endpoints.getUsers.initiate())
 
   ReactDOM.render(
     <React.StrictMode>
