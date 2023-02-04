@@ -1,29 +1,31 @@
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { Link } from 'react-router-dom'
 import {
   fetchNotifications,
-  selectAllNotifications
-} from "../components/Notifications/sliceNotification";
+  fetchNotificationsWebsocket,
+  selectAllNotifications,
+  useGetNotificationsQuery,
+} from '../components/Notifications/sliceNotification'
 
 export const Navbar = () => {
-  const dispatch = useDispatch();
-  const notifications = useSelector(selectAllNotifications);
-  const numUnreadNotifications = notifications.reduce((acc, item) => {
-    if (item.isNew) {
-      acc += 1;
-    }
-    return acc;
-  }, 0);
-  let notificationsBadge;
+  const dispatch = useDispatch()
+
+  // Trigger initial fetch of notifications and keep the websocket open to receive updates
+  useGetNotificationsQuery()
+
+  // const notificationsMetadata = useSelector(selectNotificationsMetadata)
+
+  const notifications = useSelector(selectAllNotifications)
+  const numUnreadNotifications = notifications.filter((n) => !n.read).length
+  let notificationsBadge
   if (numUnreadNotifications > 0) {
-    notificationsBadge = (
-      <span className="badge">{numUnreadNotifications}</span>
-    );
+    notificationsBadge = <span className="badge">{numUnreadNotifications}</span>
   }
   const fetchNewNotifications = () => {
-    dispatch(fetchNotifications());
-  };
+    // dispatch(fetchNotifications())
+    dispatch(fetchNotificationsWebsocket())
+  }
   return (
     <nav>
       <section>
@@ -41,5 +43,5 @@ export const Navbar = () => {
         </div>
       </section>
     </nav>
-  );
-};
+  )
+}
