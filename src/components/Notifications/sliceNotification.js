@@ -3,6 +3,8 @@ import {
   createAsyncThunk,
   createEntityAdapter,
   createSelector,
+  createAction,
+  isAnyOf,
 } from '@reduxjs/toolkit'
 import { apiSlice } from '../../api/apiSlice'
 
@@ -22,44 +24,15 @@ export const fetchNotifications = createAsyncThunk(
   }
 )
 
+/*
 const notificationsAdapter = createEntityAdapter({
   sortComparer: (a, b) => b.date.localeCompare(a.date),
 })
+*/
 
-const notificationsSlice = createSlice({
-  name: 'notifications',
-  initialState: notificationsAdapter.getInitialState(),
-  reducers: {
-    allNotificationsRead(state, action) {
-      Object.values(state.entities).forEach((notification) => {
-        notification.read = true
-      })
-    },
-  },
-  extraReducers(builder) {
-    builder.addCase(fetchNotifications.fulfilled, (state, action) => {
-      notificationsAdapter.addOne(state, action.payload)
-      Object.values(state.entities).forEach((notification) => {
-        // Any notifications we've read are no longer new
-        notification.isNew = !notification.read
-      })
-    })
-  },
-})
-
-export const { allNotificationsRead } = notificationsSlice.actions
-
-export default notificationsSlice.reducer
-
-export const selectAllNotifications2 = (state) => state.notifications
-
-// Export the customized selectors for this adapter using `getSelectors`
-export const {
-  selectAll: selectAllNotifications,
-  // selectById: selectPostById,
-  // selectIds: selectPostIds
-  // Pass in a selector that returns the posts slice of state
-} = notificationsAdapter.getSelectors((state) => state.notifications)
+const notificationsReceived = createAction(
+  'notifications/notificationsReceived'
+)
 
 export const extendedApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -67,7 +40,7 @@ export const extendedApi = apiSlice.injectEndpoints({
       query: () => '/notifications',
       async onCacheEntryAdded(
         arg,
-        { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved, dispatch }
       ) {
         // create a websocket connection when the cache subscription starts
         const ws = new WebSocket('ws://localhost')
@@ -87,6 +60,8 @@ export const extendedApi = apiSlice.injectEndpoints({
                   draft.push(...message.payload)
                   draft.sort((a, b) => b.date.localeCompare(a.date))
                 })
+                // Dispatch an additional action so we can track "read" state
+                dispatch(notificationsReceived(message.payload))
                 break
               }
               default:
@@ -107,6 +82,65 @@ export const extendedApi = apiSlice.injectEndpoints({
     }),
   }),
 })
+
+const notificationsAdapter = createEntityAdapter()
+
+const matchNotificationsReceived = isAnyOf(
+  notificationsReceived,
+  extendedApi.endpoints.getNotifications.matchFulfilled
+)
+
+const notificationsSlice = createSlice({
+  name: 'notifications',
+  initialState: notificationsAdapter.getInitialState(),
+  reducers: {
+    allNotificationsRead(state, action) {
+      Object.values(state.entities).forEach((notification) => {
+        notification.read = true
+      })
+    },
+  },
+  extraReducers(builder) {
+    builder
+      .addCase(fetchNotifications.fulfilled, (state, action) => {
+        notificationsAdapter.addOne(state, action.payload)
+        Object.values(state.entities).forEach((notification) => {
+          // Any notifications we've read are no longer new
+          notification.isNew = !notification.read
+        })
+      })
+      .addMatcher(matchNotificationsReceived, (state, action) => {
+        // Add client-side metadata for tracking new notifications
+        const notificationsMetadata = action.payload.map((notification) => ({
+          id: notification.id,
+          read: false,
+          isNew: true,
+        }))
+
+        Object.values(state.entities).forEach((notification) => {
+          // Any notifications we've read are no longer new
+          notification.isNew = !notification.read
+        })
+
+        notificationsAdapter.upsertMany(state, notificationsMetadata)
+      })
+  },
+})
+
+export const { allNotificationsRead } = notificationsSlice.actions
+
+export default notificationsSlice.reducer
+
+export const selectAllNotifications2 = (state) => state.notifications
+
+// Export the customized selectors for this adapter using `getSelectors`
+export const {
+  selectAll: selectAllNotifications,
+  selectEntities: selectMetadataEntities,
+  // selectById: selectPostById,
+  // selectIds: selectPostIds
+  // Pass in a selector that returns the posts slice of state
+} = notificationsAdapter.getSelectors((state) => state.notifications)
 
 export const { useGetNotificationsQuery } = extendedApi
 
